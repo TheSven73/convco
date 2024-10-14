@@ -13,7 +13,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os:
+          - name: ubuntu
+            os:
               name: ubuntu
               version: latest
             target: x86_64-unknown-linux-musl
@@ -37,16 +38,16 @@ jobs:
         with:
           targets: ${{ matrix.target }}
         
-      - name: Test on ${{ matrix.os.name }}
+      - name: Test on ${{ matrix.name }}
         run: cargo test
 
-      - name: Build ${{ matrix.os.name }} binary
+      - name: Build ${{ matrix.name }} binary
         run: cargo build --release
 
-      - name: Upload ${{ matrix.os.name }} binary
+      - name: Upload ${{ matrix.name }} binary
         uses: actions/upload-artifact@v4
         with:
-          name: convco-${{ matrix.os.name }}
+          name: convco-${{ matrix.name }}
           path: target/release/${{ matrix.binary }}
 
       - name: Upload shell completions
