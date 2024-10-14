@@ -19,6 +19,14 @@ jobs:
               version: latest
             target: x86_64-unknown-linux-musl
             binary: convco
+            cross: false
+          - name: ubuntu-aarch64
+            os:
+              name: ubuntu
+              version: latest
+            target: aarch64-unknown-linux-musl
+            binary: convco
+            cross: true
           # - os:
           #     name: macos
           #     version: latest
@@ -37,8 +45,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+
+      - uses: taiki-e/setup-cross-toolchain-action@v1
+        if: matrix.cross
+        with:
+          target: ${{ matrix.target }}
+
+      - uses: taiki-e/install-action@cross
+        if: matrix.cross
         
       - name: Test on ${{ matrix.name }}
+        if: matrix.cross == false
         run: cargo test
 
       - name: Build ${{ matrix.name }} binary
