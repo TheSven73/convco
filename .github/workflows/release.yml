@@ -13,20 +13,17 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: ubuntu
-            os:
+          - os:
               name: ubuntu
               version: latest
             target: x86_64-unknown-linux-musl
             binary: convco
-            cross: false
-          - name: ubuntu-aarch64
-            os:
+          - os:
               name: ubuntu
               version: latest
             target: aarch64-unknown-linux-musl
             binary: convco
-            cross: true
+            cross_suffix: -aarch64
           # - os:
           #     name: macos
           #     version: latest
@@ -47,41 +44,43 @@ jobs:
           targets: ${{ matrix.target }}
 
       - uses: taiki-e/setup-cross-toolchain-action@v1
-        if: matrix.cross
+        if: matrix.cross_suffix
         with:
           target: ${{ matrix.target }}
 
       - uses: taiki-e/install-action@cross
-        if: matrix.cross
+        if: matrix.cross_suffix
         
-      - name: Test on ${{ matrix.name }}
-        if: matrix.cross == false
+      - name: Test on ${{ matrix.os.name }}
+        if: matrix.cross_suffix == ''
         run: cargo test
 
-      - name: Build ${{ matrix.name }} binary
-        run: cargo build --release
+      - name: Build ${{ matrix.os.name }} binary
+        run: |
+          cargo build --release
+          cargo install --root . --path .
 
-      - name: Upload ${{ matrix.name }} binary
+      - name: Upload ${{ matrix.os.name }} binary
         uses: actions/upload-artifact@v4
         with:
-          name: convco-${{ matrix.name }}
-          path: target/release/${{ matrix.binary }}
+          name: convco-${{ matrix.os.name }}${{ matrix.cross_suffix }}
+          path: bin/${{ matrix.binary }}
 
       - name: Upload shell completions
-        if: matrix.os.name == 'ubuntu'
+        if: matrix.os.name == 'ubuntu' && matrix.cross_suffix == ''
         uses: actions/upload-artifact@v4
         with:
           name: convco-shell-completions
           path: target/completions
 
       - name: Debian package
-        if: matrix.os.name == 'ubuntu'
+        if: matrix.os.name == 'ubuntu' && matrix.cross_suffix == ''
         run: |
           cargo install cargo-deb
           cargo deb -- --target=${{ matrix.target }}
 
       - name: Upload Debian package
-        if: matrix.os.name == 'ubuntu'
+        if: matrix.os.name == 'ubuntu' && matrix.cross_suffix == ''
         uses: actions/upload-artifact@v4
         with:
           name: convco-deb
